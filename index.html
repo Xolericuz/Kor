@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XOLƎRIƆ webcoding</title>
+    <style>
+        :root {
+            --bg-dark-1: #09090b;
+            --bg-dark-2: #18181b;
+            --panel-bg: rgba(24, 24, 27, 0.75);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --accent-magenta: #d946ef;
+            --accent-blue: #3b82f6;
+            --text-color: #e4e4e7;
+            --text-code: #4ade80;
+            --taskbar-bg: #1f1f22;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, var(--bg-dark-2) 0%, var(--bg-dark-1) 100%);
+            overflow: hidden;
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* PWA Tugmasi */
+        #pwa-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        #pwa-btn:hover { border-color: var(--accent-magenta); color: var(--accent-magenta); }
+
+        /* Asosiy Layout */
+        #main-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            z-index: 10;
+        }
+
+        /* Taskbar (Dekorativ) */
+        #taskbar {
+            width: 100%;
+            height: 50px;
+            background-color: var(--taskbar-bg);
+            border-top: 1px solid var(--border-color);
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            padding: 0 20px;
+            z-index: 999;
+        }
+
+        /* Boshlash Ekrani va Tugma */
+        #start-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            transition: opacity 0.4s ease, visibility 0.4s ease;
+        }
+
+        #start-panel {
+            background: var(--panel-bg);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        #start-btn {
+            padding: 18px 48px;
+            font-size: 18px;
+            font-weight: 600;
+            color: #fff;
+            background: linear-gradient(135deg, var(--accent-magenta), var(--accent-blue));
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(217, 70, 239, 0.25);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        #start-btn:hover { transform: translateY(-3px); box-shadow: 0 15px 40px rgba(59, 130, 246, 0.4); }
+
+        /* Muharrir Oynasi */
+        #window-manager {
+            flex-grow: 1;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            transform: scale(0.95);
+            opacity: 0;
+            visibility: hidden;
+            margin-bottom: 50px; /* Taskbar uchun */
+        }
+
+        /* Sarlavha Paneli */
+        .window-header {
+            grid-column: 1 / -1;
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 20px 20px 0 0;
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            z-index: 10;
+        }
+
+        .window-controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .dot { width: 10px; height: 10px; border-radius: 50%; }
+        .dot.magenta { background-color: var(--accent-magenta); box-shadow: 0 0 8px var(--accent-magenta); }
+        .dot.blue { background-color: var(--accent-blue); box-shadow: 0 0 8px var(--accent-blue); }
+
+        .ellipsis-menu-btn {
+            background: transparent;
+            border: none;
+            color: #a1a1aa;
+            font-size: 20px;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .ellipsis-menu-btn:hover { color: #fff; }
+
+        /* Tahrirlash va Natija Panellari */
+        .panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 0 0 20px 20px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .panel-header-text {
+            padding: 10px 20px;
+            font-weight: 500;
+            color: #52525b;
+            font-size: 13px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        #code-input {
+            flex-grow: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-code);
+            padding: 20px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            resize: none;
+            outline: none;
+            caret-color: var(--accent-magenta);
+        }
+        #code-input::placeholder { color: #52525b; }
+
+        #preview-frame {
+            flex-grow: 1;
+            width: 100%;
+            height: 100%;
+            border: none;
+            background-color: var(--bg-dark-1);
+        }
+
+        /* Uch Nuqta Menyusi Mock-up */
+        #ellipsis-menu {
+            position: absolute;
+            top: 50px;
+            right: 20px;
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 10px;
+            display: none;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 110;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+        .menu-item {
+            background: transparent;
+            border: none;
+            color: #fff;
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            text-align: left;
+            transition: background 0.2s;
+        }
+        .menu-item:hover { background: rgba(255, 255, 255, 0.05); }
+
+        /* Scrollbar Dizayni */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #52525b; }
+
+        /* Media Query: Mobil uchun */
+        @media (max-width: 768px) {
+            #window-manager {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            #code-panel, #preview-panel {
+                border-radius: 0;
+                margin-top: 1px;
+            }
+            .window-header {
+                border-radius: 15px 15px 0 0;
+                padding: 10px 15px;
+            }
+            #pwa-btn {
+                bottom: 60px;
+                right: 15px;
+                padding: 8px 15px;
+                font-size: 12px;
+            }
+            #start-panel {
+                padding: 20px;
+            }
+            #start-btn {
+                padding: 15px 35px;
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <button id="pwa-btn">PWA O'rnatish</button>
+
+    <div id="main-container">
+
+        <div id="start-overlay">
+            <div id="start-panel">
+                <button id="start-btn">KODNİ MUHARRİRGA O'TİSH</button>
+            </div>
+        </div>
+
+        <div id="window-manager">
+            
+            <div class="window-header">
+                <div class="window-controls">
+                    <div class="dot magenta"></div>
+                    <div class="dot blue"></div>
+                </div>
+                <button class="ellipsis-menu-btn">...</button>
+            </div>
+
+            <div id="ellipsis-menu">
+                <button class="menu-item" onclick="clearCode()">Kodni tozalash</button>
+                <button class="menu-item" onclick="copyCode()">Nusxalash</button>
+                <button class="menu-item" onclick="pasteCode()">Joylashtirish</button>
+                <button class="menu-item" onclick="fullscreenPreview()">Natijani to'liq ekranda ko'rish</button>
+            </div>
+
+            <div class="panel" id="code-panel">
+                <div class="panel-header-text">KOD</div>
+                <textarea id="code-input" spellcheck="false" placeholder="&#10;<style>&#10;  h1 { color: #fff; text-align: center; }&#10;</style>&#10;<h1>Salom Dunyo!</h1>"></textarea>
+            </div>
+
+            <div class="panel" id="preview-panel">
+                <div class="panel-header-text">NATIJA</div>
+                <iframe id="preview-frame" sandbox="allow-scripts allow-modals allow-same-origin"></iframe>
+            </div>
+
+        </div>
+
+        <div id="taskbar">
+            </div>
+
+    </div>
+
+    <script>
+        const startOverlay = document.getElementById('start-overlay');
+        const startBtn = document.getElementById('start-btn');
+        const windowManager = document.getElementById('window-manager');
+        const codeInput = document.getElementById('code-input');
+        const previewFrame = document.getElementById('preview-frame');
+        const ellipsisMenuBtn = document.querySelector('.ellipsis-menu-btn');
+        const ellipsisMenu = document.getElementById('ellipsis-menu');
+
+        // Boshlash va Fullscreen-ga o'tish
+        startBtn.addEventListener('click', () => {
+            let de = document.documentElement;
+            if (de.requestFullscreen) { de.requestFullscreen(); }
+            else if (de.webkitRequestFullscreen) { de.webkitRequestFullscreen(); }
+            
+            startOverlay.style.opacity = '0';
+            setTimeout(() => {
+                startOverlay.style.visibility = 'hidden';
+                windowManager.style.transform = 'scale(1)';
+                windowManager.style.opacity = '1';
+                windowManager.style.visibility = 'visible';
+                updatePreview();
+            }, 400);
+        });
+
+        // Jonli Preview
+        let typingTimer;
+        const doneTypingInterval = 500;
+
+        function updatePreview() {
+            const code = codeInput.value;
+            const fullCode = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <style>
+                        body { 
+                            color: #e4e4e7; 
+                            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+                            padding: 20px; 
+                            background-color: #09090b;
+                        }
+                    </style>
+                </head>
+                <body>
+                    ${code}
+                </body>
+                </html>
+            `;
+            previewFrame.srcdoc = fullCode;
+        }
+
+        codeInput.addEventListener('input', () => {
+            clearTimeout(typingTimer);
+            typingTimer = setTimeout(updatePreview, doneTypingInterval);
+        });
+
+        // Ellipsis Menu
+        ellipsisMenuBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            ellipsisMenu.style.display = ellipsisMenu.style.display === 'flex' ? 'none' : 'flex';
+        });
+
+        document.addEventListener('click', () => {
+            ellipsisMenu.style.display = 'none';
+        });
+
+        // Menu Funktsiyalari (Mock-up)
+        function clearCode() {
+            codeInput.value = '';
+            updatePreview();
+        }
+
+        function copyCode() {
+            codeInput.select();
+            document.execCommand('copy');
+            alert('Kod clipboard-ga nusxalandi!');
+        }
+
+        function pasteCode() {
+            navigator.clipboard.readText().then(text => {
+                codeInput.value = text;
+                updatePreview();
+            }).catch(err => {
+                alert('Joylashtirish rad etildi: ' + err);
+            });
+        }
+
+        function fullscreenPreview() {
+            previewFrame.requestFullscreen();
+        }
+    </script>
+</body>
+</html>
