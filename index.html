@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#d946ef">
+    <title>XOLƎRIƆ WebCode</title>
+    
+    <link rel="manifest" href="data:application/manifest+json;charset=utf-8,%7B%22name%22%3A%22WebCode%20X%20Premium%22%2C%22short_name%22%3A%22WebCode%20X%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22fullscreen%22%2C%22background_color%22%3A%22%2309090b%22%2C%22theme_color%22%3A%22%23d946ef%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fui-avatars.com%2Fapi%2F%3Fname%3DX%26background%3D09090b%26color%3Dd946ef%26size%3D192%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image%2Fpng%22%7D%2C%7B%22src%22%3A%22https%3A%2F%2Fui-avatars.com%2Fapi%2F%3Fname%3DX%26background%3D09090b%26color%3Dd946ef%26size%3D512%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D">
+
+    <style>
+        :root {
+            --bg-dark-1: #09090b;
+            --bg-dark-2: #18181b;
+            --panel-bg: rgba(24, 24, 27, 0.85);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --brand-magenta: #d946ef;
+            --mac-red: #ff5f56;
+            --mac-yellow: #ffbd2e;
+            --mac-green: #27c93f;
+            --text-color: #e4e4e7;
+            --text-code: #4ade80;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', -apple-system, sans-serif; }
+
+        body, html {
+            width: 100%; height: 100%;
+            background: radial-gradient(circle at center, var(--bg-dark-2) 0%, var(--bg-dark-1) 100%);
+            overflow: hidden; color: var(--text-color);
+            display: flex; justify-content: center; align-items: center;
+            /* Ekran belgilanishini oldini olish */
+            -webkit-user-select: none; user-select: none;
+        }
+
+        /* O'rnatish Tugmasi */
+        #pwa-btn {
+            position: fixed; bottom: 25px; right: 25px;
+            background: linear-gradient(135deg, var(--brand-magenta), #3b82f6);
+            border: none; color: #fff; padding: 14px 28px;
+            border-radius: 30px; cursor: pointer; z-index: 1000;
+            font-size: 15px; font-weight: 600; box-shadow: 0 10px 30px rgba(217, 70, 239, 0.5);
+            display: none; transition: all 0.3s ease;
+        }
+        #pwa-btn:hover { transform: translateY(-4px) scale(1.05); }
+
+        /* Boshlash Ekrani */
+        #start-overlay {
+            position: absolute; inset: 0;
+            background: var(--bg-dark-1);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            z-index: 9999; transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+
+        .logo-x {
+            width: 130px; height: 130px; border-radius: 28px;
+            margin-bottom: 40px; box-shadow: 0 0 50px rgba(217, 70, 239, 0.4);
+            border: 1px solid rgba(217, 70, 239, 0.3);
+            animation: pulse 2s infinite alternate;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 0 40px rgba(217, 70, 239, 0.3); }
+            100% { transform: scale(1.05); box-shadow: 0 0 60px rgba(217, 70, 239, 0.6); }
+        }
+
+        #start-btn {
+            padding: 18px 50px; font-size: 20px; font-weight: 700; color: #fff;
+            background: linear-gradient(135deg, var(--brand-magenta), #3b82f6);
+            border: none; border-radius: 16px; cursor: pointer;
+            box-shadow: 0 10px 30px rgba(217, 70, 239, 0.3);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        #start-btn:hover { transform: translateY(-3px); box-shadow: 0 15px 40px rgba(59, 130, 246, 0.5); }
+
+        /* Asosiy Ishchi Oyna */
+        #main-container {
+            width: 98%; height: 96%;
+            display: flex; flex-direction: column;
+            transform: scale(0.95); opacity: 0; visibility: hidden;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        /* Yuqori Header */
+        .window-header {
+            background: var(--panel-bg); backdrop-filter: blur(25px);
+            border: 1px solid var(--border-color); border-radius: 20px 20px 0 0;
+            padding: 15px 24px; display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.4); z-index: 10;
+        }
+
+        .window-controls { display: flex; gap: 10px; }
+        
+        .dot { 
+            width: 16px; height: 16px; border-radius: 50%; border: none; cursor: pointer;
+            position: relative; display: flex; align-items: center; justify-content: center;
+            transition: transform 0.1s;
+        }
+        .dot:active { transform: scale(0.8); }
+        .dot::after {
+            content: attr(title); position: absolute; top: 28px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.9); color: #fff; font-size: 12px; padding: 6px 12px;
+            border-radius: 6px; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 0.2s;
+            z-index: 100; font-weight: 500;
+        }
+        .dot:hover::after { opacity: 1; }
+
+        .dot.red { background-color: var(--mac-red); box-shadow: 0 0 12px rgba(255, 95, 86, 0.5); }
+        .dot.yellow { background-color: var(--mac-yellow); box-shadow: 0 0 12px rgba(255, 189, 46, 0.5); }
+        .dot.green { background-color: var(--mac-green); box-shadow: 0 0 12px rgba(39, 201, 63, 0.5); }
+
+        .header-title {
+            font-size: 15px; color: #a1a1aa; font-weight: 800; letter-spacing: 2.5px;
+            position: absolute; left: 50%; transform: translateX(-50%);
+        }
+
+        .ellipsis-menu-btn { 
+            background: transparent; border: none; color: #a1a1aa; 
+            font-size: 24px; cursor: pointer; line-height: 1; font-weight: bold;
+        }
+        .ellipsis-menu-btn:hover { color: #fff; }
+
+        /* Panellar */
+        .panels-wrapper { flex-grow: 1; display: flex; gap: 15px; margin-top: 15px; }
+
+        .panel {
+            flex: 1; background: var(--panel-bg); backdrop-filter: blur(25px);
+            border: 1px solid var(--border-color); border-radius: 18px;
+            display: flex; flex-direction: column; overflow: hidden;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+        }
+
+        .panel-header-text {
+            padding: 14px 24px; font-weight: 700; color: #71717a;
+            font-size: 13px; letter-spacing: 1.5px; border-bottom: 1px solid var(--border-color);
+            background: rgba(0,0,0,0.3);
+        }
+
+        #code-input {
+            flex-grow: 1; background: transparent; border: none; color: var(--text-code);
+            padding: 24px; font-family: 'Consolas', 'Monaco', monospace; font-size: 16px;
+            line-height: 1.6; resize: none; outline: none; caret-color: var(--brand-magenta);
+            -webkit-user-select: auto; user-select: auto; /* Kod yozishga ruxsat */
+        }
+
+        #preview-frame {
+            flex-grow: 1; width: 100%; height: 100%; border: none; background-color: var(--bg-dark-1);
+        }
+
+        /* 3 Nuqta Menyusi */
+        #ellipsis-menu {
+            position: absolute; top: 65px; right: 24px;
+            background: var(--bg-dark-2); border: 1px solid var(--border-color);
+            border-radius: 14px; padding: 10px; display: none; flex-direction: column;
+            z-index: 110; box-shadow: 0 20px 40px rgba(0,0,0,0.8);
+        }
+        .menu-item {
+            background: transparent; border: none; color: #d4d4d8; padding: 12px 20px;
+            border-radius: 8px; cursor: pointer; font-size: 15px; text-align: left;
+            display: flex; align-items: center; gap: 12px; font-weight: 500;
+        }
+        .menu-item:hover { background: rgba(255, 255, 255, 0.08); color: #fff; }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 10px; height: 10px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 5px; }
+        ::-webkit-scrollbar-thumb:hover { background: #52525b; }
+
+        /* Mobil Versiya */
+        @media (max-width: 768px) {
+            #main-container { width: 100%; height: 100%; transform: scale(1); border-radius: 0; }
+            .window-header { border-radius: 0; padding: 15px 20px; }
+            .panels-wrapper { flex-direction: column; margin-top: 0; gap: 0; }
+            .panel { border-radius: 0; border: none; }
+            .panel:first-child { border-bottom: 2px solid var(--brand-magenta); height: 50%; flex: none; }
+            .panel:last-child { height: 50%; }
+            #code-input { padding: 15px; font-size: 14px; }
+        }
+    </style>
+</head>
+<body>
+
+    <button id="pwa-btn">📲 Ilovani O'rnatish</button>
+
+    <div id="start-overlay">
+        <img src="https://ui-avatars.com/api/?name=X&background=09090b&color=d946ef&size=512" alt="WebCode X" class="logo-x">
+        <button id="start-btn">KODNI MUHARRIRGA O'TISH</button>
+    </div>
+
+    <div id="main-container">
+        
+        <div class="window-header">
+            <div class="window-controls">
+                <button class="dot red" title="Kodni Tozalash" onclick="clearCode()"></button>
+                <button class="dot yellow" title="Kodni Nusxalash" onclick="copyCode()"></button>
+                <button class="dot green" title="Natijani To'liq Ekranda Ko'rish" onclick="fullscreenPreview()"></button>
+            </div>
+            
+            <div class="header-title">WEBCODE X</div>
+            
+            <button class="ellipsis-menu-btn" onclick="toggleMenu(event)">...</button>
+        </div>
+
+        <div id="ellipsis-menu">
+            <button class="menu-item" onclick="pasteCode()">📋 Joylashtirish</button>
+            <button class="menu-item" onclick="resetUI()">🔄 Qayta yuklash</button>
+        </div>
+
+        <div class="panels-wrapper">
+            <div class="panel">
+                <div class="panel-header-text">KOD</div>
+                <textarea id="code-input" spellcheck="false" placeholder="&#10;<style>&#10;  body { display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background: #000; color: #fff; font-family: sans-serif; }&#10;  h1 { text-shadow: 0 0 20px #d946ef; }&#10;</style>&#10;&#10;<h1>Salom X Premium!</h1>"></textarea>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header-text">NATIJA</div>
+                <iframe id="preview-frame" sandbox="allow-scripts allow-modals allow-same-origin"></iframe>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const startOverlay = document.getElementById('start-overlay');
+        const startBtn = document.getElementById('start-btn');
+        const mainContainer = document.getElementById('main-container');
+        const codeInput = document.getElementById('code-input');
+        const previewFrame = document.getElementById('preview-frame');
+        const ellipsisMenu = document.getElementById('ellipsis-menu');
+        const pwaBtn = document.getElementById('pwa-btn');
+
+        let isAppStarted = false;
+
+        // 1. "Ortga" tugmasini bloklash (History API xaki)
+        window.history.pushState(null, null, window.location.href);
+        window.onpopstate = function () {
+            window.history.pushState(null, null, window.location.href);
+            enforceFullscreen(); // Ortga bosilganda ham to'liq ekranni saqlab qolishga urinish
+        };
+
+        // 2. Doimiy To'liq Ekran Funksiyasi (Persistent Fullscreen)
+        function enforceFullscreen() {
+            if (!isAppStarted) return; // Dastur boshlanmasdan oldin ishlamaydi
+            
+            let de = document.documentElement;
+            if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+                if (de.requestFullscreen) { de.requestFullscreen().catch(()=>{}); }
+                else if (de.webkitRequestFullscreen) { de.webkitRequestFullscreen().catch(()=>{}); }
+            }
+        }
+
+        // Ekran istalgan joyiga bosilganda to'liq ekranga avtomatik qaytish
+        document.addEventListener('click', enforceFullscreen);
+        document.addEventListener('touchstart', enforceFullscreen);
+
+        // Boshlash tugmasi
+        startBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); // Global clikga xalaqit bermaslik uchun
+            isAppStarted = true;
+            enforceFullscreen();
+            
+            startOverlay.style.opacity = '0';
+            setTimeout(() => {
+                startOverlay.style.visibility = 'hidden';
+                mainContainer.style.visibility = 'visible';
+                mainContainer.style.opacity = '1';
+                mainContainer.style.transform = 'scale(1)';
+                updatePreview();
+            }, 400);
+        });
+
+        // Jonli Natija
+        let typingTimer;
+        codeInput.addEventListener('input', () => {
+            clearTimeout(typingTimer);
+            typingTimer = setTimeout(updatePreview, 400);
+        });
+
+        function updatePreview() {
+            previewFrame.srcdoc = codeInput.value;
+        }
+
+        // --- Mac Tugmalarining Vazifalari ---
+        function clearCode() {
+            codeInput.value = '';
+            updatePreview();
+        }
+
+        function copyCode() {
+            codeInput.select();
+            document.execCommand('copy');
+            const yellowBtn = document.querySelector('.dot.yellow');
+            yellowBtn.style.transform = 'scale(1.3)';
+            setTimeout(() => yellowBtn.style.transform = 'scale(1)', 200);
+        }
+
+        function fullscreenPreview() {
+            if (previewFrame.requestFullscreen) { previewFrame.requestFullscreen(); }
+            else if (previewFrame.webkitRequestFullscreen) { previewFrame.webkitRequestFullscreen(); }
+        }
+
+        // --- 3 Nuqta Menyusi ---
+        function toggleMenu(e) {
+            e.stopPropagation();
+            ellipsisMenu.style.display = ellipsisMenu.style.display === 'flex' ? 'none' : 'flex';
+        }
+
+        document.addEventListener('click', (e) => { 
+            if(e.target !== ellipsisMenu && !ellipsisMenu.contains(e.target)) {
+                ellipsisMenu.style.display = 'none'; 
+            }
+        });
+
+        function pasteCode() {
+            navigator.clipboard.readText().then(text => {
+                codeInput.value += text;
+                updatePreview();
+            }).catch(() => alert('Joylashtirish uchun brauzer ruxsati kerak!'));
+        }
+
+        function resetUI() {
+            window.location.reload();
+        }
+
+        // --- PWA VA SERVICE WORKER ---
+        const swCode = `
+            self.addEventListener('install', (e) => self.skipWaiting());
+            self.addEventListener('activate', (e) => self.clients.claim());
+            self.addEventListener('fetch', (e) => {});
+        `;
+        const blob = new Blob([swCode], {type: 'application/javascript'});
+        const swUrl = URL.createObjectURL(blob);
+        
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register(swUrl);
+        }
+
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            pwaBtn.style.display = 'block';
+        });
+
+        pwaBtn.addEventListener('click', async (e) => {
+            e.stopPropagation(); // Fullscreenga xalaqit bermasligi uchun
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    pwaBtn.style.display = 'none';
+                }
+                deferredPrompt = null;
+            }
+        });
+    </script>
+</body>
+</html>
